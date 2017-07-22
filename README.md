@@ -1,2 +1,2 @@
 # twitter_bot
-A twitter bot with lot's of functionality
+A twitter bot with lots of functionality
