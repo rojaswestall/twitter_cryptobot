@@ -6,4 +6,3 @@ consumer_secret = ''
 
 access_token = ''
 access_secret = '' # Access Token Secret
-
