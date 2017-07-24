@@ -20,11 +20,14 @@ ltc = ('LTC', 'https://min-api.cryptocompare.com/data/price?fsym=LTC&tsyms=USD')
 xrp = ('XRP', 'https://min-api.cryptocompare.com/data/price?fsym=XRP&tsyms=USD') # Ripple
 sc  = ('SC', 'https://min-api.cryptocompare.com/data/price?fsym=SC&tsyms=USD')   # SiaCoin
 
+# Returns the price for any coin given as an arugment.
+# Returns in this format: {'USD': 2764} (json object)
+def coin_price(coin): 
+	price = loads(get(coin[1]).text) 
+	return price
 
-def coin_prices(): # Price is returned in this format: {'USD': 2764} (json object)
-	btcprice = loads(get(btc[1]).text) 
-	ethprice = loads(get(eth[1]).text)
-	return btcprice
-
-btcprice = get_prices();
+def percent_monitor(coin):
+	coin_price(coin)
+	
+btcprice = coin_price(btc);
 print(btcprice)
