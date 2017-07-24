@@ -1,2 +1,2 @@
-# twitter_bot
-A twitter bot with lots of functionality
+# twitter_cryptobot
+A twitter bot that monitors and tweets the price of certain cryptocurrencies
