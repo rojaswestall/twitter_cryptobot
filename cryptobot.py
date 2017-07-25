@@ -7,7 +7,7 @@ from requests import get
 from mgconfig import *
 from threading import Thread
 from time import sleep
-from message_format import TimeMessage, IncOrDec
+from message_format import time_message, inc_or_dec
 from multiprocessing import Pool
 
 
@@ -27,6 +27,7 @@ for code in coins:
 	coin = (code, 'https://min-api.cryptocompare.com/data/price?fsym=' + code + '&tsyms=USD')
 	coin_list.append(coin)
 
+
 # Returns the price for any coin given as an arugment.
 # Returns in this format: {'USD': 2764} (dictionary)
 def coin_price(coin): 
@@ -40,16 +41,25 @@ def percent_change(original, new):
 	return percentchange
 
 
+# A proportion checker that returns true if the percent change/hour is greater than 5%
+def proportion_check(old_price, new_price, ogtime, now):
+	percent = percent_change(old_price, new_price)
+	timedif = now - ogtime
+	if (percent / timedif.seconds) >= (5/3600): # 3600 sec = 1 hour
+		return True
+	return False
+
+
 # A function that monitors the price fluctuation of a coin and tweets if there is a certain 
 # percent change. 
 def change_monitor(coin):
-	print('Monitor started for ' + coin[0] + '!')
+	print('Monitor started for ' + coin[0])
 	ogtime = datetime.now()
 	old_price = coin_price(coin)['USD']
 	new_price = old_price
 	# Check if price change is greater than the specified %. 
 	# If it's not, wait a minute, update the new prices, and try again
-	while percent_change(old_price, new_price) < 3:
+	while not proportion_check(old_price, new_price, ogtime, datetime.now()):
 		sleep(60)
 		new_price = coin_price(coin)['USD']
 	# If it's greater, tweet the change, whether it increased or decreased, and the period of time it took
@@ -59,37 +69,53 @@ def change_monitor(coin):
 	minutes = int((timedif.seconds - (hours * 3600)) / 60) # The number of minutes (-hours) it took to change 5%
 
 	# Making the tweet look pretty :)
-	change = IncOrDec(new_price, old_price)
-	hours, minutes, hourmsg, minutemsg = TimeMessage(hours, minutes)
+	change = inc_or_dec(new_price, old_price)
+	hours, minutes, hourmsg, minutemsg = time_message(hours, minutes)
 	
 	message = '{} {} {:04.2f}{} in the past {}{}{}{}!\n\nThe new price is ${}'.format(coin[0], change, percent_change(old_price, new_price), '%', str(hours), hourmsg, str(minutes), minutemsg, str(new_price))
 	api.update_status(message)
 	print('Price change tweeted for ' + coin[0])
 	change_monitor(coin)
 
-	# BUT HOW TO MAKE THE TIMES AND PRICE COMPARISON CONTINUOUSLY CHANGING???
 
-
-# Tweets the price of all desired coins at that time
-def first_tweet(coin_list):
+# Tweets the price of all desired coins at 8:00am and pm everyday
+def price_tweet(coin_list, old_price_list):
 	rightnow = datetime.now().strftime("%b. %d, %Y %I:%M%p")
-	message = 'Crypto prices right now (' + rightnow + '):\n'
-	for coin in coin_list:
-		price = str(coin_price(coin)['USD'])
-		message = message + '\n' + coin[0] + ': $' + price
+	message = 'Crypto prices right now ({}):\n'.format(rightnow)
+	new_price_list = []
+	for i in range(0, len(coin_list)):
+		coin = coin_list[i]
+		price = coin_price(coin)['USD']
+		# Adding the price to a list to use for the next time price_tweet is called
+		new_price_list.append(price)
+
+		change = percent_change(old_price_list[i], price)
+		if price > old_price_list[i]:
+			updown = '\u25b2' # Up Symbol
+		else:
+			updown = '\u25bc' # Down Symbol
+
+		message = message + '\n{}{:04.2f} {}: ${}'.format(updown, percent_change, coin[0], str(price))
 	api.update_status(message)
+	print('Prices for all coins tweeted')
+	sleep(43200) # Sleep for 12 hours
+	price_tweet(coin_list, new_price_list)
 	# coin[0] will print out the cyrptocurrency code for that coin: 'BTC'
 	# price['USD'] will give the dictionary price value for BTC if price = coin_price(btc)
 
 
 # The function that will start the monitoring of all specified coins
 def monitor_coins(coin_list):
-	first_tweet(coin_list)
+	# Start tweeting the price every 8 hours
+	thread = Thread(target = price_tweet, args = (coin_list, coin_list))
+	thread.start()
 	# Start monitoring each coin
 	for coin in coin_list:
 		thread = Thread(target = change_monitor, args = (coin,))
 		thread.start()
+	
 
-monitor_coins(coin_list)
+# monitor_coins(coin_list)
+
 
 

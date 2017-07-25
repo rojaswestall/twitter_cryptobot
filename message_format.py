@@ -1,7 +1,7 @@
 # The formatting for the messages
 
 # This will correct the grammar for the amount of time it's taken for a change to occur
-def TimeMessage(hours, minutes):
+def time_message(hours, minutes):
 	if hours > 1 and minutes == 0:
 		hourmsg = ' hours'
 		minutemsg = ''
@@ -32,7 +32,7 @@ def TimeMessage(hours, minutes):
 		minutemsg = ' minutes'
 	return hours, minutes, hourmsg, minutemsg
 
-def IncOrDec(new_price, old_price):
+def inc_or_dec(new_price, old_price):
 	if new_price > old_price:
 		change = 'has increased by'
 	else:
