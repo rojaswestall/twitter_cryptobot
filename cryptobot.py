@@ -20,11 +20,11 @@ api = tweepy.API(auth)
 #btc = ('BTC', 'https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD') # Bitcoin
 # Add the coin code in all CAPS to coins for the coins you want to be monitored
 coins = ['BTC', 'ETH', 'LTC', 'XRP', 'SC']
-coin_list = [];
+coin_list = []
 
 for code in coins:
 	coin = (code, 'https://min-api.cryptocompare.com/data/price?fsym=' + code + '&tsyms=USD')
-	coin_list = coin_list.append(coin)
+	coin_list.append(coin)
 
 # Returns the price for any coin given as an arugment.
 # Returns in this format: {'USD': 2764} (dictionary)
