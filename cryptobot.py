@@ -44,7 +44,6 @@ def percent_change(original, new):
 # percent change. 
 def change_monitor(coin):
 	ogtime = datetime.now()
-	print('Time that change_monitor begins for ' + coin[0] + ': ' + str(ogtime))
 	old_price = coin_price(coin)['USD']
 	new_price = old_price
 	# Check if price change is greater than 1%. 
@@ -59,7 +58,6 @@ def change_monitor(coin):
 		####	ogtime = datetime.now()
 	# If it's greater, tweet the change, whether it increased or decreased, and the period of time it took
 	recordtime = datetime.now()
-	print('Time that change_monitor tweets change' + coin[0] + ': ' + str(recordtime))
 	timedif = recordtime - ogtime
 	hours = int(timedif.seconds / 3600) # The number of hours (-minutes) it took to change 5%
 	minutes = int((timedif.seconds - (hours * 3600)) / 60) # The number of minutes (-hours) it took to change 5%
@@ -68,10 +66,8 @@ def change_monitor(coin):
 	change = IncOrDec(new_price, old_price)
 	hours, minutes, hourmsg, minutemsg = TimeMessage(hours, minutes)
 	
-	message = '{} {} {:04.2f}{} in the past {}{}{}{}!\n\nThe new price is $ {}'.format(coin[0], change, percent_change(old_price, new_price), '%', str(hours), hourmsg, str(minutes), minutemsg, str(new_price))
-
-	print(message)
-	#api.update_status(message)
+	message = '{} {} {:04.2f}{} in the past {}{}{}{}!\n\nThe new price is ${}'.format(coin[0], change, percent_change(old_price, new_price), '%', str(hours), hourmsg, str(minutes), minutemsg, str(new_price))
+	api.update_status(message)
 	print('Price change tweeted for ' + coin[0])
 	change_monitor(coin)
 
