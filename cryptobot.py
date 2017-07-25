@@ -1,4 +1,4 @@
-# author: rojaswestall
+# author: Gabe Rojas-Westall (github: rojaswestall)
 
 import tweepy
 from datetime import datetime
@@ -8,6 +8,7 @@ from mgconfig import *
 from threading import Thread
 from time import sleep
 from message_format import TimeMessage, IncOrDec
+from multiprocessing import Pool
 
 
 # Authenticating with Tweepy
@@ -18,7 +19,6 @@ api = tweepy.API(auth)
 
 # The URL is a link to the json object of the price of a currency in terms of another specified currency
 # Here, the json objects will have the price in USD because syms=USD
-#btc = ('BTC', 'https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD') # Bitcoin
 # Add the coin code in all CAPS to coins for the coins you want to be monitored
 coins = ['BTC', 'ETH', 'LTC', 'XRP', 'SC']
 coin_list = []
@@ -43,19 +43,15 @@ def percent_change(original, new):
 # A function that monitors the price fluctuation of a coin and tweets if there is a certain 
 # percent change. 
 def change_monitor(coin):
+	print('Monitor started for ' + coin[0] + '!')
 	ogtime = datetime.now()
 	old_price = coin_price(coin)['USD']
 	new_price = old_price
-	# Check if price change is greater than 1%. 
+	# Check if price change is greater than the specified %. 
 	# If it's not, wait a minute, update the new prices, and try again
-	while percent_change(old_price, new_price) < 0.01:
+	while percent_change(old_price, new_price) < 3:
 		sleep(60)
 		new_price = coin_price(coin)['USD']
-		#### Want to reset the old price every 12 hours regardless of whether or not it has shifted by 5%
-		#### because 5% differences after 12 hours aren't as significant
-		####timedif = ogtime - datetime.now()
-		####if timedif.seconds > 43200: # 43200sec = 12 hours
-		####	ogtime = datetime.now()
 	# If it's greater, tweet the change, whether it increased or decreased, and the period of time it took
 	recordtime = datetime.now()
 	timedif = recordtime - ogtime
@@ -83,15 +79,15 @@ def first_tweet(coin_list):
 		message = message + '\n' + coin[0] + ': $' + price
 	api.update_status(message)
 	# coin[0] will print out the cyrptocurrency code for that coin: 'BTC'
-	# price['BTC'] will give the dictionary price value for BTC if price = get_price(btc)
+	# price['USD'] will give the dictionary price value for BTC if price = coin_price(btc)
 
 
 # The function that will start the monitoring of all specified coins
 def monitor_coins(coin_list):
-	#first_tweet(coin_list)
+	first_tweet(coin_list)
 	# Start monitoring each coin
 	for coin in coin_list:
-		thread = Thread(target = change_monitor(coin))
+		thread = Thread(target = change_monitor, args = (coin,))
 		thread.start()
 
 monitor_coins(coin_list)
