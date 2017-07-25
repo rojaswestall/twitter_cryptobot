@@ -1,4 +1,4 @@
-# authors: mpeter66 and rojaswestall
+# author: rojaswestall
 
 import tweepy
 from datetime import datetime
@@ -9,24 +9,22 @@ from threading import Thread
 from time import sleep
 
 
-
 # Authenticating with Tweepy
 auth = tweepy.OAuthHandler(consumer_token, consumer_secret)
 auth.set_access_token(access_token, access_secret)
 api = tweepy.API(auth)
 
 
-#### NEED TO FIND A BETTER WAY OF MAKING THE COIN LIST
-# The URLS are links to json objects to the price of a currency in terms of a specified currency
-# The json objects will have the price in USD because syms=USD
-# Add the cryptocurrencies you want to track here
-btc = ('BTC', 'https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD') # Bitcoin
-eth = ('ETH', 'https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD') # Ethereum
-ltc = ('LTC', 'https://min-api.cryptocompare.com/data/price?fsym=LTC&tsyms=USD') # Litecoin
-xrp = ('XRP', 'https://min-api.cryptocompare.com/data/price?fsym=XRP&tsyms=USD') # Ripple
-sc  = ('SC', 'https://min-api.cryptocompare.com/data/price?fsym=SC&tsyms=USD')   # SiaCoin
-coin_list = [btc, eth, ltc, xrp, sc];
+# The URL is a link to the json object of the price of a currency in terms of another specified currency
+# Here, the json objects will have the price in USD because syms=USD
+#btc = ('BTC', 'https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD') # Bitcoin
+# Add the coin code in all CAPS to coins for the coins you want to be monitored
+coins = ['BTC', 'ETH', 'LTC', 'XRP', 'SC']
+coin_list = [];
 
+for code in coins:
+	coin = (code, 'https://min-api.cryptocompare.com/data/price?fsym=' + code + '&tsyms=USD')
+	coin_list = coin_list.append(coin)
 
 # Returns the price for any coin given as an arugment.
 # Returns in this format: {'USD': 2764} (dictionary)
@@ -47,9 +45,9 @@ def change_monitor(coin):
 	ogtime = datetime.now()
 	old_price = coin_price(coin)['USD']
 	new_price = old_price
-	# Check if price change is greater than 5%. 
+	# Check if price change is greater than 1%. 
 	# If it's not, wait a minute, update the new prices, and try again
-	while percent_change(old_price, new_price) < 5:
+	while percent_change(old_price, new_price) < 1:
 		sleep(60)
 		new_price = coin_price(coin)['USD']
 		#### Want to reset the old price every 12 hours regardless of whether or not it has shifted by 5%
@@ -63,18 +61,15 @@ def change_monitor(coin):
 	minutes = int((timedif.seconds - (hours * 3600)) / 60) # The number of minutes (-hours) it took to change 5%
 
 	if new_price > old_price:
-		message = 'has increased by 5%'
+		message = 'has increased by 1%'
 	else:
-		message = 'has decreased by 5%'
+		message = 'has decreased by 1%'
 
 	api.update_status(coin[0] + message + ' in the past ' + str(hours) + ' hours and ' + str(minutes) + ' minutes!\n\nThe new price is $' + str(new_price))
 	print('Price change tweeted for ' + coin[0])
 	change_monitor(coin)
 
-	# BUT HOW TO MAKE IT CONTINUOUSLY CHANGING???
-
-	### Need to write something that checks every minute or 
-	### two and then tweets if the change is large enough
+	# BUT HOW TO MAKE THE TIMES AND PRICE COMPARISON CONTINUOUSLY CHANGING???
 
 
 # Tweets the price of all desired coins at that time
@@ -96,8 +91,6 @@ def monitor_coins(coin_list):
 	for coin in coin_list:
 		thread = Thread(target = change_monitor(coin))
 		thread.start()
-
-#change_monitor(btc)
 
 monitor_coins(coin_list)
 
