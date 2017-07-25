@@ -7,6 +7,7 @@ from requests import get
 from mgconfig import *
 from threading import Thread
 from time import sleep
+from message_format import TimeMessage, IncOrDec
 
 
 # Authenticating with Tweepy
@@ -43,11 +44,12 @@ def percent_change(original, new):
 # percent change. 
 def change_monitor(coin):
 	ogtime = datetime.now()
+	print('Time that change_monitor begins for ' + coin[0] + ': ' + str(ogtime))
 	old_price = coin_price(coin)['USD']
 	new_price = old_price
 	# Check if price change is greater than 1%. 
 	# If it's not, wait a minute, update the new prices, and try again
-	while percent_change(old_price, new_price) < 1:
+	while percent_change(old_price, new_price) < 0.01:
 		sleep(60)
 		new_price = coin_price(coin)['USD']
 		#### Want to reset the old price every 12 hours regardless of whether or not it has shifted by 5%
@@ -56,16 +58,20 @@ def change_monitor(coin):
 		####if timedif.seconds > 43200: # 43200sec = 12 hours
 		####	ogtime = datetime.now()
 	# If it's greater, tweet the change, whether it increased or decreased, and the period of time it took
-	timedif = ogtime - datetime.now()
+	recordtime = datetime.now()
+	print('Time that change_monitor tweets change' + coin[0] + ': ' + str(recordtime))
+	timedif = recordtime - ogtime
 	hours = int(timedif.seconds / 3600) # The number of hours (-minutes) it took to change 5%
 	minutes = int((timedif.seconds - (hours * 3600)) / 60) # The number of minutes (-hours) it took to change 5%
 
-	if new_price > old_price:
-		message = 'has increased by 1%'
-	else:
-		message = 'has decreased by 1%'
+	# Making the tweet look pretty :)
+	change = IncOrDec(new_price, old_price)
+	hours, minutes, hourmsg, minutemsg = TimeMessage(hours, minutes)
+	
+	message = '{} {} {:04.2f}{} in the past {}{}{}{}!\n\nThe new price is $ {}'.format(coin[0], change, percent_change(old_price, new_price), '%', str(hours), hourmsg, str(minutes), minutemsg, str(new_price))
 
-	api.update_status(coin[0] + message + ' in the past ' + str(hours) + ' hours and ' + str(minutes) + ' minutes!\n\nThe new price is $' + str(new_price))
+	print(message)
+	#api.update_status(message)
 	print('Price change tweeted for ' + coin[0])
 	change_monitor(coin)
 
@@ -86,7 +92,7 @@ def first_tweet(coin_list):
 
 # The function that will start the monitoring of all specified coins
 def monitor_coins(coin_list):
-	first_tweet(coin_list)
+	#first_tweet(coin_list)
 	# Start monitoring each coin
 	for coin in coin_list:
 		thread = Thread(target = change_monitor(coin))
