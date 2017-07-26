@@ -8,7 +8,6 @@ from mgconfig import *
 from threading import Thread
 from time import sleep
 from message_format import time_message, inc_or_dec
-from multiprocessing import Pool
 
 
 # Authenticating with Tweepy
