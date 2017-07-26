@@ -20,6 +20,7 @@ api = tweepy.API(auth)
 # The URL is a link to the json object of the price of a currency in terms of another specified currency
 # Here, the json objects will have the price in USD because syms=USD
 # Add the coin code in all CAPS to coins for the coins you want to be monitored
+# The max it can do is 4 or 5 coins because of the character limit on tweets
 coins = ['BTC', 'ETH', 'LTC', 'XRP', 'SC']
 coin_list = []
 
@@ -81,9 +82,12 @@ def change_monitor(coin):
 	change = inc_or_dec(new_price, old_price)
 	hours, minutes, hourmsg, minutemsg = time_message(hours, minutes)
 	
+	# Tweet it!
 	message = '{} {} {:04.2f}{} in the past {}{}{}{}!\n\nThe new price is ${}'.format(coin[0], change, percent_change(old_price, new_price), '%', str(hours), hourmsg, str(minutes), minutemsg, str(new_price))
 	api.update_status(message)
 	print('Price change tweeted for ' + coin[0])
+
+	# Restart
 	change_monitor(coin)
 
 
@@ -126,6 +130,8 @@ def price_tweet(coin_list, old_price_list):
 
 	# Sleep for 12 hours. 43200
 	sleep(43200) 
+
+	# Restart
 	price_tweet(coin_list, new_price_list)
 
 	# coin[0] will print out the cyrptocurrency code for that coin: 'BTC'
@@ -134,7 +140,7 @@ def price_tweet(coin_list, old_price_list):
 
 # The function that will start the monitoring of all specified coins
 def monitor_coins(coin_list):
-	# Start tweeting the price every 8 hours
+	# Start tweeting the price every 12 hours
 	thread = Thread(target = price_tweet, args = (coin_list, dummylist))
 	thread.start()
 	# Start monitoring each coin
