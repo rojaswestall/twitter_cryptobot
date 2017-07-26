@@ -45,7 +45,9 @@ def percent_change(original, new):
 def proportion_check(old_price, new_price, ogtime, now):
 	percent = percent_change(old_price, new_price)
 	timedif = now - ogtime
-	if (percent / timedif.seconds) >= (5/3600): # 3600 sec = 1 hour
+	if timedif.seconds == 0:
+		return False
+	elif (percent / timedif.seconds) >= (5/3600): # 3600 sec = 1 hour
 		return True
 	return False
 
@@ -59,7 +61,7 @@ def change_monitor(coin):
 	new_price = old_price
 	# Check if price change is greater than the specified %. 
 	# If it's not, wait a minute, update the new prices, and try again
-	while not proportion_check(old_price, new_price, ogtime, datetime.now()):
+	while percent_change(old_price, new_price) < 5: # not proportion_check(old_price, new_price, ogtime, datetime.now())
 		sleep(60)
 		new_price = coin_price(coin)['USD']
 	# If it's greater, tweet the change, whether it increased or decreased, and the period of time it took
@@ -78,10 +80,11 @@ def change_monitor(coin):
 	change_monitor(coin)
 
 
-# Tweets the price of all desired coins at 8:00am and pm everyday
+# Tweets the price of all desired coins every 12 hours
 def price_tweet(coin_list, old_price_list):
-	rightnow = datetime.now().strftime("%b. %d, %Y %I:%M%p")
-	message = 'Crypto prices right now ({}):\n'.format(rightnow)
+	global first
+	rightnow = datetime.now().strftime("%b. %d, %I:%M%p")
+	message = 'Crypto prices ({}):\n'.format(rightnow)
 	new_price_list = []
 	for i in range(0, len(coin_list)):
 		coin = coin_list[i]
@@ -89,17 +92,35 @@ def price_tweet(coin_list, old_price_list):
 		# Adding the price to a list to use for the next time price_tweet is called
 		new_price_list.append(price)
 
-		change = percent_change(old_price_list[i], price)
-		if price > old_price_list[i]:
+		# If this is the first time running the function set the old price and new price to be the same
+		if first == True:
+			old_price_list[i] = price
+
+		change = round(percent_change(old_price_list[i], price), 1)
+
+		# Setting the right up or down symbol next to percent change
+		if change == 0.0:
+			updown = '\u27a4' # Right Symbol
+		elif price > old_price_list[i]:
 			updown = '\u25b2' # Up Symbol
+		elif price == old_price_list[i]:
+			updown = '\u27a4' # Right Symbol
 		else:
 			updown = '\u25bc' # Down Symbol
 
-		message = message + '\n{}{:04.2f} {}: ${}'.format(updown, percent_change, coin[0], str(price))
+		message = message + '\n{}{}{} {}: ${}'.format(updown, change, '%', coin[0], str(price))
+
+	#Tweet the prices
 	api.update_status(message)
 	print('Prices for all coins tweeted')
-	sleep(43200) # Sleep for 12 hours
+
+	# No longer in the first iteration of the loop
+	first = False
+
+	# Sleep for 12 hours. 43200
+	sleep(60) 
 	price_tweet(coin_list, new_price_list)
+
 	# coin[0] will print out the cyrptocurrency code for that coin: 'BTC'
 	# price['USD'] will give the dictionary price value for BTC if price = coin_price(btc)
 
@@ -107,15 +128,18 @@ def price_tweet(coin_list, old_price_list):
 # The function that will start the monitoring of all specified coins
 def monitor_coins(coin_list):
 	# Start tweeting the price every 8 hours
-	thread = Thread(target = price_tweet, args = (coin_list, coin_list))
+	thread = Thread(target = price_tweet, args = (coin_list, dummylist))
 	thread.start()
 	# Start monitoring each coin
 	for coin in coin_list:
 		thread = Thread(target = change_monitor, args = (coin,))
 		thread.start()
 	
-
-# monitor_coins(coin_list)
+dummylist = []
+for i in range(0, len(coin_list)): 
+	dummylist.append(0)
+first = True
+monitor_coins(coin_list)
 
 
 
