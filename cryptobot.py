@@ -59,11 +59,18 @@ def change_monitor(coin):
 	ogtime = datetime.now()
 	old_price = coin_price(coin)['USD']
 	new_price = old_price
+
 	# Check if price change is greater than the specified %. 
 	# If it's not, wait a minute, update the new prices, and try again
 	while percent_change(old_price, new_price) < 5: # not proportion_check(old_price, new_price, ogtime, datetime.now())
 		sleep(60)
 		new_price = coin_price(coin)['USD']
+		# Reset the price of the coin every 12 hours
+		timedif = datetime.now() - ogtime
+		if timedif.seconds >= 43200:
+			ogtime = datetime.now()
+			old_price = new_price
+
 	# If it's greater, tweet the change, whether it increased or decreased, and the period of time it took
 	recordtime = datetime.now()
 	timedif = recordtime - ogtime
@@ -118,7 +125,7 @@ def price_tweet(coin_list, old_price_list):
 	first = False
 
 	# Sleep for 12 hours. 43200
-	sleep(60) 
+	sleep(43200) 
 	price_tweet(coin_list, new_price_list)
 
 	# coin[0] will print out the cyrptocurrency code for that coin: 'BTC'
